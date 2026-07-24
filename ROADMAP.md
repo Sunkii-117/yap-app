@@ -67,7 +67,7 @@ dark-only, Fraunces for headings/numbers, Nunito for UI, the candy button, the g
 | # | Milestone | Goal in one line | Status |
 |---|-----------|------------------|--------|
 | **S1** | Coach Quality Spike *(parallel, throwaway)* | Prove Claude can score + coach a yap usefully | ⬜ |
-| **M0** | Foundation & Design System | Running app skeleton with the Yap theme in code, tested & on CI | ⬜ |
+| **M0** | Foundation & Design System | Running app skeleton with the Yap theme in code, tested & on CI | ✅ |
 | **M1** | First Rep | Cold launch → un-scary 15s audio yap → Yapbot reaction, in < 2 min | ⬜ |
 | **M2** | Today + iOS Widget | Daily prompt on home screen + a home-screen widget | ⬜ |
 | **M3** | Coach Pipeline | Transcribe → score → filler count → 2–3 delta tips, productionized | ⬜ |
@@ -110,7 +110,7 @@ of 8–10 real recordings. **Out:** any app UI, persistence, the delta-vs-last l
 
 ---
 
-### M0 · Foundation & Design System ⬜
+### M0 · Foundation & Design System ✅
 **Goal:** A running SwiftUI app that launches into an in-app design-system gallery, with every Yap token in code
 and unit-tested against `tokens.json`, on CI, committed and pushed.
 **Why now:** Everything downstream is assembly of these components. Getting the theme + candy button right once
@@ -125,8 +125,8 @@ Spacing/Radius/Shadow/Motion`, `CandyButton`, `YapCard`, a `DesignSystemGallery`
 - [x] Unit tests assert **every** color token's hex equals the value in `tokens.json` (all pass). *(15-token guard, green)*
 - [x] Fraunces + Nunito load from the bundle (test: `UIFont(name:)` non-nil for each weight). *(3 font tests green)*
 - [x] `CandyButton` shows the press physics (translateY + edge shrink) and honors Reduce Motion.
-- [ ] CI runs `xcodebuild test` green on push. *(workflow added; verified after push)*
-- [ ] Branch merged to `main` via PR after `/review`; roadmap Progress Log updated.
+- [x] CI runs `xcodebuild test` green on push. *(both runs pass — 2m49s / 3m47s on macos-15)*
+- [x] Branch merged to `main` via PR after `/review`; roadmap Progress Log updated. *(PR #1 squash-merged; /review clean, 0 findings)*
 **Dependencies:** Xcode installed (see M0 plan Task 0). **Plan:** `docs/plans/2026-07-23-m0-foundation.md` ✅ *(written)*.
 
 ---
@@ -276,7 +276,7 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 
 ## 6. Progress log (append-only)
 - **2026-07-23** — Direction locked: brand spec sheet + tokens (`yap-spec-sheet.html`, `tokens.css/json`) and the app-icon logo (`yap-logo-mockup.png`, watermark cleaned). Stack decided: **SwiftUI, iOS-first, widget prioritized.** Master roadmap + M0 plan written. Next: S1 spike and/or M0 Task 0 (install Xcode).
-- **2026-07-24** — **M0 built on `feat/m0-foundation` (pending CI + merge).** XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
+- **2026-07-24** — **M0 shipped ✅ — merged to `main` via PR #1** (squash; CI green, `/review` clean with 0 findings). XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
 
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.
