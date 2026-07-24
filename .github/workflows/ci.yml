@@ -1,0 +1,22 @@
+name: CI
+on:
+  push:
+    branches: [main, "feat/**"]
+  pull_request:
+jobs:
+  test:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Generate project
+        run: xcodegen generate
+      - name: Test
+        run: |
+          # Pick whatever iPhone simulator the runner's Xcode provides.
+          DEVICE=$(xcrun simctl list devices available \
+            | grep -Eo 'iPhone [0-9]+( Pro( Max)?)?' | sort -u | tail -1)
+          echo "Using simulator: $DEVICE"
+          xcodebuild test -scheme Yap \
+            -destination "platform=iOS Simulator,name=$DEVICE"
