@@ -120,12 +120,12 @@ Spacing/Radius/Shadow/Motion`, `CandyButton`, `YapCard`, a `DesignSystemGallery`
 **Out:** any product screens, persistence, networking.
 **Deliverables:** buildable `Yap.xcodeproj` (generated), design-system source, tests, `.github/workflows/ci.yml`, README.
 **Definition of Done:**
-- [ ] `brew`-install prerequisites documented; `xcodegen generate` produces a project that builds clean.
-- [ ] App launches on the iOS 17 simulator into `DesignSystemGallery`.
-- [ ] Unit tests assert **every** color token's hex equals the value in `tokens.json` (all pass).
-- [ ] Fraunces + Nunito load from the bundle (test: `UIFont(name:)` non-nil for each weight).
-- [ ] `CandyButton` shows the press physics (translateY + edge shrink) and honors Reduce Motion.
-- [ ] CI runs `xcodebuild test` green on push.
+- [x] `brew`-install prerequisites documented; `xcodegen generate` produces a project that builds clean.
+- [x] App launches on the iOS 17 simulator into `DesignSystemGallery`. *(verified on iPhone 17 / iOS 26.5 sim — screenshot)*
+- [x] Unit tests assert **every** color token's hex equals the value in `tokens.json` (all pass). *(15-token guard, green)*
+- [x] Fraunces + Nunito load from the bundle (test: `UIFont(name:)` non-nil for each weight). *(3 font tests green)*
+- [x] `CandyButton` shows the press physics (translateY + edge shrink) and honors Reduce Motion.
+- [ ] CI runs `xcodebuild test` green on push. *(workflow added; verified after push)*
 - [ ] Branch merged to `main` via PR after `/review`; roadmap Progress Log updated.
 **Dependencies:** Xcode installed (see M0 plan Task 0). **Plan:** `docs/plans/2026-07-23-m0-foundation.md` ✅ *(written)*.
 
@@ -276,6 +276,7 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 
 ## 6. Progress log (append-only)
 - **2026-07-23** — Direction locked: brand spec sheet + tokens (`yap-spec-sheet.html`, `tokens.css/json`) and the app-icon logo (`yap-logo-mockup.png`, watermark cleaned). Stack decided: **SwiftUI, iOS-first, widget prioritized.** Master roadmap + M0 plan written. Next: S1 spike and/or M0 Task 0 (install Xcode).
+- **2026-07-24** — **M0 built on `feat/m0-foundation` (pending CI + merge).** XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
 
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.
