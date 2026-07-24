@@ -21,6 +21,12 @@
   <key>UILaunchScreen</key>
   <dict/>
   <key>UIAppFonts</key>
-  <array/>
+  <array>
+    <string>Fraunces-Black.ttf</string>
+    <string>Fraunces-Bold.ttf</string>
+    <string>Fraunces-SemiBold.ttf</string>
+    <string>Nunito-ExtraBold.ttf</string>
+    <string>Nunito-SemiBold.ttf</string>
+  </array>
 </dict>
 </plist>
