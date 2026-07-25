@@ -70,7 +70,7 @@ dark-only, Fraunces for headings/numbers, Nunito for UI, the candy button, the g
 | **M0** | Foundation & Design System | Running app skeleton with the Yap theme in code, tested & on CI | ✅ |
 | **M1** | First Rep | Cold launch → un-scary 15s audio yap → Yapbot reaction, in < 2 min | ⬜ |
 | **M2** | Today + iOS Widget | Daily prompt on home screen + a home-screen widget | 🟡 |
-| **M3** | Coach Pipeline | Transcribe → score → filler count → 2–3 delta tips, productionized | ⬜ |
+| **M3** | Coach Pipeline | Transcribe → score → filler count → 2–3 delta tips, productionized | 🟡 |
 | **M4** | Record Studio + Score UI | The full studio record screen and the score/coaching reveal | ⬜ |
 | **M5** | Yapbot Scripting | Chat → HOOK/MIDDLE/CLOSE scaffold card → "Record this" | ⬜ |
 | **M6** | Streak, Progress, Profile | Streaks, Yap points, profile, highlight reel | ⬜ |
@@ -179,7 +179,7 @@ midnight, deep link `yap://today`. **Out:** the actual recording from Today (rou
 
 ---
 
-### M3 · Coach Pipeline ⬜
+### M3 · Coach Pipeline 🟡 *(engine built + tested; end-to-end recording→coach pending M1 record flow + deployed key)*
 **Goal:** Productionize S1 into an app-callable service: given a recording, return `{score, fillers, pace,
 tips, highlight}` measured as a **delta against the user's last yap**, behind a secure proxy.
 **Why now:** Turns the validated spike into the real engine the score/coaching UI (M4) consumes.
@@ -189,12 +189,13 @@ response contract, the delta-vs-last-yap computation, error/timeout/offline hand
 **Out:** the score UI (M4), scripting (M5).
 **Deliverables:** `CoachService` (client), proxy service, `CoachResult` model, delta logic, tests, contract doc.
 **Definition of Done:**
-- [ ] Given a recording, returns a valid `CoachResult` within the S1 latency target (p50).
-- [ ] Deltas compare to the actual previous yap; first-ever scored yap has no delta (handled, not crashed).
-- [ ] No API key ships in the client (verified — key lives only in the proxy).
-- [ ] Offline/timeout returns a calm, retryable state; the recording is never lost.
-- [ ] Delta + parsing logic unit-tested with fixture responses; malformed-LLM-output path handled.
-**Dependencies:** S1, M1 (a stored yap to score). **Plan:** *TBD.*
+- [~] Given a recording, returns a valid `CoachResult` within the S1 latency target (p50). *(`CoachService`: transcript+metrics → prompt → proxy → parsed `CoachResult`, fixture-tested. Recording→transcript (Speech) seam built; end-to-end latency measured once the proxy has a key + the M1 record flow exists.)*
+- [x] Deltas compare to the actual previous yap; first-ever scored yap has no delta (handled, not crashed). *(`MetricsDelta` + `CoachServiceTests`.)*
+- [x] No API key ships in the client (verified — key lives only in the proxy). *(`HTTPCoachBackend` holds only the URL; key is `ANTHROPIC_API_KEY` in the proxy.)*
+- [~] Offline/timeout returns a calm, retryable state; the recording is never lost. *(Backend/service surface errors as thrown errors; the calm retryable UI + local persistence land with M1/M4.)*
+- [x] Delta + parsing logic unit-tested with fixture responses; malformed-LLM-output path handled. *(`CoachingParserTests` + `CoachServiceTests` — 12 coach tests.)*
+**Dependencies:** S1, M1 (a stored yap to score). **Plan:** `docs/plans/2026-07-25-m3-coach-engine.md` ✅.
+> *Legend:* `[~]` = engine complete + tested; the end-to-end path (real audio → on-device transcription → deployed proxy → latency, plus the offline/retry UI) lands with the M1 record flow and a deployed Anthropic key.
 
 ---
 
@@ -287,6 +288,7 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 - **2026-07-24** — **M0 shipped ✅ — merged to `main` via PR #1** (squash; CI green, `/review` clean with 0 findings). XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
 - **2026-07-25** — **Plan reshaped by founder + build reprioritized.** Dropped the "15s, audio-only, no-score un-scary first rep" (was PRD §3 #3 / §7.1 / M1) — it wasn't the founder's intent. **M1 is now "Onboarding + First Rep":** normal auth (Apple/Google/email) + profile capture (goal, interests, format) → a *normal* first yap. **Build order flipped:** do **M2 widget + M3 coach engine** now (logic/backend), frontend + design later. **Decisions locked:** transcription = on-device Apple `Speech` (behind a `Transcriber` protocol); coach proxy = thin **Node/TS** service holding the Anthropic key; coaching model = `claude-opus-4-8`. Also corrected the stale **RN+Expo** stack note in PRD §11 → the native SwiftUI reality we actually shipped in M0. Next: M2 widget plan + build, then coach engine + proxy.
 - **2026-07-25** — **M2 widget logic built (🟡) on `feat/m2-widget`.** Shared core compiled into app + widget: `Prompt`, curated `PromptLibrary` (14 provocation-first prompts), deterministic `PromptProvider` (prompt-of-the-day by local day — stable/advances/wraps, 4 tests), `SharedStore` over the App Group (3 tests). Real `TodayWidget` (small/medium/large, brand purple+gold, midnight-refresh timeline, `yap://today` deep link) + a minimal functional `TodayView` landing screen; the app publishes today's prompt to the App Group + reloads the widget on launch. **12 unit tests green**; Today verified rendering on the sim. *Deferred (founder — frontend/design later):* on-device widget visual snapshot + tap-through (CLI can't place widgets), custom-font-in-widget, full Dynamic Type reflow. Next: coach engine + thin proxy.
+- **2026-07-25** — **M3 coach engine built (🟡) on `feat/m3-coach`.** Productionized S1 into Swift: `CoachMetrics` (twin of `coachmetrics` — reproduces the validated s1=17/s2=6/s3=13 filler baseline exactly), `CoachResult`/`CoachCoaching` contract (snake_case, matches the S1 prompt input), `MetricsDelta` (signed deltas; nil on first yap), `CoachingParser` (strips fences/prose, validates, throws on malformed), `CoachService` (metrics→prompt→backend→parse→assemble), `CoachPrompt` (verbatim S1 template), `Transcriber` protocol + on-device `SpeechTranscriber`, and `HTTPCoachBackend`. Plus a **thin Node/TS proxy** (`proxy/`) holding `ANTHROPIC_API_KEY`, `POST /coach` → `claude-opus-4-8` → text; typechecks, boots, `/health` + validation verified (no key in client — `HTTPCoachBackend` knows only the URL). **12 coach unit tests green** (metrics baseline, delta, parser incl. malformed, end-to-end via mock backend, first-yap no-delta, backend stub). *Pending:* real audio → transcription → **deployed proxy** latency, and the offline/retry UI — both land with the M1 record flow + a deployed Anthropic key. Next: `/review` → merge; then M1 (frontend) or wire the proxy once you provide a key.
 
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.
