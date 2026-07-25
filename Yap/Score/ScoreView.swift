@@ -8,8 +8,6 @@ struct ScoreView: View {
     let onDone: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @AppStorage("yap.streak") private var streak = 0
-    @AppStorage("yap.total") private var total = 0
     @State private var shownScore: Int = 0
 
     private var score: Int { result.coaching.score }
@@ -126,9 +124,5 @@ struct ScoreView: View {
         return "\(d.fillersDelta) more fillers"
     }
 
-    private func finish() {
-        streak += 1
-        total += 1
-        onDone()
-    }
+    private func finish() { onDone() } // persistence + streak handled by RecordFlow
 }

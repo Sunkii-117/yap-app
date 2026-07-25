@@ -11,6 +11,7 @@ struct YapApp: App {
                     guard url.scheme == "yap" else { return } // yap://today lands in the app
                 }
         }
+        .modelContainer(for: YapRecord.self)
     }
 
     /// Keep the App Group + widget in sync with today's prompt.

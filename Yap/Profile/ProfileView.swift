@@ -1,10 +1,12 @@
 import SwiftUI
+import SwiftData
 
 /// Private profile (design doc §7.7), simple first pass: streak + total as big gold
-/// Fraunces numbers, a few skill-trend rows. Sparklines/highlight reel are later.
+/// Fraunces numbers, a few skill-trend rows. Total comes from the real SwiftData store.
 struct ProfileView: View {
     @AppStorage("yap.streak") private var streak = 0
-    @AppStorage("yap.total") private var total = 0
+    @Query private var yaps: [YapRecord]
+    private var total: Int { yaps.count }
 
     var body: some View {
         ZStack {
