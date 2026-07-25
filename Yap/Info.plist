@@ -18,6 +18,10 @@
   <string>$(MARKETING_VERSION)</string>
   <key>CFBundleVersion</key>
   <string>$(CURRENT_PROJECT_VERSION)</string>
+  <key>NSSpeechRecognitionUsageDescription</key>
+  <string>Yap transcribes your yap on-device to count filler words and coach you.</string>
+  <key>NSMicrophoneUsageDescription</key>
+  <string>Yap needs the microphone to record your yaps.</string>
   <key>UILaunchScreen</key>
   <dict/>
   <key>UIAppFonts</key>

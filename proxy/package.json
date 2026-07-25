@@ -1,0 +1,19 @@
+{
+  "name": "yap-coach-proxy",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Thin proxy holding the Anthropic key; relays the coach prompt to Claude.",
+  "scripts": {
+    "start": "tsx server.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.70.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}
