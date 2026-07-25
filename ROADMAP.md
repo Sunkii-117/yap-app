@@ -69,7 +69,7 @@ dark-only, Fraunces for headings/numbers, Nunito for UI, the candy button, the g
 | **S1** | Coach Quality Spike *(parallel, throwaway)* | Prove Claude can score + coach a yap usefully | ⬜ |
 | **M0** | Foundation & Design System | Running app skeleton with the Yap theme in code, tested & on CI | ✅ |
 | **M1** | First Rep | Cold launch → un-scary 15s audio yap → Yapbot reaction, in < 2 min | ⬜ |
-| **M2** | Today + iOS Widget | Daily prompt on home screen + a home-screen widget | ⬜ |
+| **M2** | Today + iOS Widget | Daily prompt on home screen + a home-screen widget | 🟡 |
 | **M3** | Coach Pipeline | Transcribe → score → filler count → 2–3 delta tips, productionized | ⬜ |
 | **M4** | Record Studio + Score UI | The full studio record screen and the score/coaching reveal | ⬜ |
 | **M5** | Yapbot Scripting | Chat → HOOK/MIDDLE/CLOSE scaffold card → "Record this" | ⬜ |
@@ -158,7 +158,7 @@ frontend later.
 
 ---
 
-### M2 · Today + iOS Widget ⬜  *(your near-term priority)*
+### M2 · Today + iOS Widget 🟡  *(logic done + tested; widget visuals deferred to design phase)*
 **Goal:** The home tab shows today's prompt as a candy prompt-card with "Yap it" / "Help me script", and a
 home-screen **WidgetKit widget** shows the same daily prompt and deep-links into the app.
 **Why now:** The widget is the daily habit hook (PRD §1) and an explicit priority. It's small once M0's design
@@ -168,13 +168,14 @@ App-Group-shared prompt store, `TodayWidget` in small/medium/large, `TimelinePro
 midnight, deep link `yap://today`. **Out:** the actual recording from Today (routes into M1/M4 flow), scoring.
 **Deliverables:** `Today` view, `PromptProvider`, shared store, widget extension, deep-link routing, tests.
 **Definition of Done:**
-- [ ] Today shows a deterministic "prompt of the day" (same prompt all day, changes at local midnight).
-- [ ] Widget renders correctly in **all three** widget sizes (snapshot verified) with the brand purple + gold.
-- [ ] Widget updates at local midnight and reflects the same prompt as the app (App Group verified).
-- [ ] Tapping the widget deep-links into Today.
-- [ ] `PromptProvider` date-selection logic unit-tested (stable within a day, advances across days, wraps the list).
-- [ ] Widget respects Dynamic Type and dark rendering; VoiceOver reads the prompt.
-**Dependencies:** M0 (design system, App Group). **Plan:** *TBD when we start M2.*
+- [x] Today shows a deterministic "prompt of the day" (same prompt all day, changes at local midnight). *(PromptProvider unit-tested; Today verified on sim.)*
+- [~] Widget renders correctly in **all three** widget sizes (snapshot verified) with the brand purple + gold. *(3 families + brand colors coded & bundled; on-device widget snapshot pending Xcode preview — CLI can't place widgets.)*
+- [x] Widget updates at local midnight and reflects the same prompt as the app (App Group verified). *(timeline policy `.after(nextMidnight)`; shared `PromptProvider`/`SharedStore`, round-trip tested.)*
+- [~] Tapping the widget deep-links into Today. *(`.widgetURL(yap://today)` + app `.onOpenURL` + Today root wired; on-device tap pending a placed widget.)*
+- [x] `PromptProvider` date-selection logic unit-tested (stable within a day, advances across days, wraps the list). *(4 tests green.)*
+- [~] Widget respects Dynamic Type and dark rendering; VoiceOver reads the prompt. *(dark ✓, VoiceOver label ✓; Dynamic Type via `minimumScaleFactor` — full reflow pass in the design phase.)*
+**Dependencies:** M0 (design system, App Group). **Plan:** `docs/plans/2026-07-25-m2-widget.md` ✅.
+> *Legend:* `[~]` = code-complete, on-device widget visual/interaction verification deferred to the design phase (founder deferred frontend/design 2026-07-25).
 
 ---
 
@@ -285,6 +286,7 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 - **2026-07-23** — Direction locked: brand spec sheet + tokens (`yap-spec-sheet.html`, `tokens.css/json`) and the app-icon logo (`yap-logo-mockup.png`, watermark cleaned). Stack decided: **SwiftUI, iOS-first, widget prioritized.** Master roadmap + M0 plan written. Next: S1 spike and/or M0 Task 0 (install Xcode).
 - **2026-07-24** — **M0 shipped ✅ — merged to `main` via PR #1** (squash; CI green, `/review` clean with 0 findings). XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
 - **2026-07-25** — **Plan reshaped by founder + build reprioritized.** Dropped the "15s, audio-only, no-score un-scary first rep" (was PRD §3 #3 / §7.1 / M1) — it wasn't the founder's intent. **M1 is now "Onboarding + First Rep":** normal auth (Apple/Google/email) + profile capture (goal, interests, format) → a *normal* first yap. **Build order flipped:** do **M2 widget + M3 coach engine** now (logic/backend), frontend + design later. **Decisions locked:** transcription = on-device Apple `Speech` (behind a `Transcriber` protocol); coach proxy = thin **Node/TS** service holding the Anthropic key; coaching model = `claude-opus-4-8`. Also corrected the stale **RN+Expo** stack note in PRD §11 → the native SwiftUI reality we actually shipped in M0. Next: M2 widget plan + build, then coach engine + proxy.
+- **2026-07-25** — **M2 widget logic built (🟡) on `feat/m2-widget`.** Shared core compiled into app + widget: `Prompt`, curated `PromptLibrary` (14 provocation-first prompts), deterministic `PromptProvider` (prompt-of-the-day by local day — stable/advances/wraps, 4 tests), `SharedStore` over the App Group (3 tests). Real `TodayWidget` (small/medium/large, brand purple+gold, midnight-refresh timeline, `yap://today` deep link) + a minimal functional `TodayView` landing screen; the app publishes today's prompt to the App Group + reloads the widget on launch. **12 unit tests green**; Today verified rendering on the sim. *Deferred (founder — frontend/design later):* on-device widget visual snapshot + tap-through (CLI can't place widgets), custom-font-in-widget, full Dynamic Type reflow. Next: coach engine + thin proxy.
 
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.

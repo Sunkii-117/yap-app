@@ -14,7 +14,7 @@ targets:
   Yap:
     type: application
     platform: iOS
-    sources: [Yap]
+    sources: [Yap, Shared]
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yap.app
@@ -29,7 +29,11 @@ targets:
   YapWidgetExtension:
     type: app-extension
     platform: iOS
-    sources: [YapWidget]
+    sources:
+      - YapWidget
+      - Shared
+      - path: Yap/DesignSystem/Theme/YapColor.swift
+      - path: Yap/DesignSystem/Theme/YapHex.swift
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yap.app.widget
