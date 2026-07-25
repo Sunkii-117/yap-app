@@ -296,3 +296,4 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 - Public profile toggle; Friends/Dojo feed; Yap Pro paywall (M8).
 - Light mode (design doc recommends dark-only at launch).
 - Motion easing tokens; spotlight headline scrim token (from spec-sheet Gaps).
+- **Coach proxy deploy-hardening** (from M3 `/review`, do before exposing the proxy publicly): add an app-token/auth check + rate limiting to `POST /coach`; explicit refusal/empty-content handling in the proxy; an optional request timeout on `HTTPCoachBackend`.
