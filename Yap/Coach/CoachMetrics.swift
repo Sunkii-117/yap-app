@@ -10,6 +10,15 @@ struct CoachMetrics: Codable, Equatable {
     let fillers: [String: Int]
     let fillersTotal: Int
 
+    // snake_case matches the metrics JSON the S1 prompt was validated against.
+    enum CodingKeys: String, CodingKey {
+        case wordCount = "word_count"
+        case durationSec = "duration_sec"
+        case wpm
+        case fillers
+        case fillersTotal = "fillers_total"
+    }
+
     /// Filler lexicon — the common verbal-filler set for English talking-to-camera.
     /// "so"/"right"/"well" as legit sentence words are excluded to protect the ±1
     /// accuracy target; only "right," (with a trailing comma) is treated as a filler.
@@ -46,5 +55,12 @@ struct CoachMetrics: Codable, Equatable {
     private static func regexCount(_ pattern: String, in text: String) -> Int {
         guard let re = try? NSRegularExpression(pattern: pattern) else { return 0 }
         return re.numberOfMatches(in: text, range: NSRange(text.startIndex..., in: text))
+    }
+
+    /// Compact JSON the coaching prompt treats as authoritative (the model must not recompute).
+    func encodedJSON() -> String {
+        let enc = JSONEncoder()
+        enc.outputFormatting = [.sortedKeys]
+        return (try? enc.encode(self)).flatMap { String(data: $0, encoding: .utf8) } ?? "{}"
     }
 }
