@@ -47,7 +47,7 @@ These four decisions are settled and everything in this PRD assumes them. Changi
 
 1. **Practice is the front door; content is the reward.** The default session is a practice rep with feedback. Turning a yap into a polished post is something you *unlock* once a take is good ("this one's ready to post"), not a parallel mode you pick up front.
 2. **The feed is a dojo, not a stage.** Default privacy is **private**. The social layer is framed as a room of fellow beginners leveling up, where being rough is the premise. It does not try to compete with TikTok on content quality.
-3. **The first rep is engineered to be un-scary.** First-ever yap: audio-only option, ~15 seconds, no score shown, permanently private. Video and scoring are earned, not forced on day one.
+3. **Onboarding is a normal first-run flow; the first yap is a real yap.** Auth → capture goal + interests + preferred format, then straight into the standard loop (prompt → optional Yapbot → record → coach with score + delta tips). There is no forced "audio-only, ~15s, no-score" first rep. *(Reshaped 2026-07-25 by founder.)*
 4. **The coach tracks deltas, it does not grade.** Feedback always compares you to your own recent yaps ("half the fillers you had last week"). No absolute 1–10 "you're a bad speaker" verdicts. Harshness is a user-controlled dial, gentle by default.
 
 ---
@@ -113,23 +113,24 @@ Everything in §7 is a component of this loop or scaffolding around it.
 
 Each feature: **what it is**, **user stories**, **requirements**, **acceptance criteria (AC)**. Priority tags: `[MVP]` = first build, `[V1.5]`, `[Later]`.
 
-### 7.1 Onboarding & the un-scary first rep `[MVP]`
-**What:** First-run flow that captures a light profile and gets the user through one successful, fear-free yap.
+### 7.1 Onboarding & first rep `[MVP]`
+**What:** First-run flow that captures a light profile and gets the user into the real core loop with their first yap.
 
 **User stories:**
-- As a nervous first-timer, I want my first recording to feel impossible to fail, so I don't bail.
+- As a new user, I want a quick, normal sign-up and setup, so I can get going.
 - As a new user, I want the app to learn what I care about, so my prompts feel like me.
 
 **Requirements:**
 - Auth: Sign in with Apple + Google + email.
 - Capture in onboarding: primary goal (start posting / get more confident / just curious), 3–5 interest tags (free text or picker: e.g. sports takes, work stories, pop culture, fitness, tech), preferred default format (audio/video).
-- First yap is forced into the un-scary configuration: **audio-only default, ~15s target, no score screen, permanently private**, with copy that says so up front.
-- After the first yap, reveal the real loop (scoring, streak, Yapbot) as a light "here's what you unlocked" moment.
+- After onboarding, land in the core loop; the first yap is a **normal yap** (prompt → optional Yapbot → record → coach with score + delta tips) — no artificial length, audio-only, or hidden-score constraints.
+- Private by default; nothing is shared without an explicit action.
 
 **AC:**
-- A brand-new user can go from app-open to first completed yap in under ~2 minutes with no dead ends.
-- The first yap never displays a numeric score.
+- A brand-new user can go from app-open to a first completed yap with no dead ends.
 - Interests captured in onboarding measurably influence the first curated prompt.
+
+> *Reshaped 2026-07-25:* the earlier "forced un-scary first rep (audio-only, ~15s, no score)" was dropped by the founder — onboarding is a normal flow and the first yap is a normal yap.
 
 ### 7.2 Daily prompt + iOS widget `[MVP]`
 **What:** One prompt per day, surfaced on the home screen via a widget, that pulls the user into a yap.
@@ -331,7 +332,7 @@ Library is organized by **skill** (storytelling, hot-take/persuasion, explain-si
 
 ## 9. AI / model specification
 
-- **Transcription:** word-timestamped ASR (Deepgram / AssemblyAI / hosted Whisper). Word timestamps required for metrics.
+- **Transcription:** **on-device Apple `Speech`** for v1 (private, free, offline), behind a `Transcriber` protocol so a word-timestamped cloud ASR (Deepgram / AssemblyAI / hosted Whisper) can drop in if accuracy falls short. *(2026-07-25 decision.)*
 - **Deterministic metrics:** computed in code from the transcript (no model).
 - **Coaching + scripting + content polish:** **Claude**, structured JSON I/O, validated.
   - Default: **`claude-sonnet-5`** (quality/cost balance for per-yap analysis + Yapbot).
@@ -385,7 +386,7 @@ ModerationEvent id, target_type(yap|comment|user), target_id, reason, status, cr
 
 ## 11. Technical stack (recommended)
 
-- **Client:** iOS-first, **React Native + Expo** (or native Swift if the widget/camera experience demands it — decide in M0 spike). **WidgetKit** for the home-screen widget. Local-first capture, background resumable upload.
+- **Client:** iOS-first, **native Swift + SwiftUI** (decided post-M0; the widget/camera experience won out over RN+Expo — see `ROADMAP.md` §1). **WidgetKit** for the home-screen widget. **SwiftData** local store; local-first capture, background resumable upload. *(2026-07-25: supersedes the RN+Expo recommendation. Backend for v1 is a **thin Node/TS Claude proxy** + on-device transcription — not the full Node/Postgres/Mux stack below, which is the later-scale target.)*
 - **Backend:** **Node.js (TypeScript)** API + async **job queue** for the analysis pipeline (record/upload fast; transcription+LLM async). **Postgres** primary datastore.
 - **Media:** **Mux** or **Cloudflare Stream** for video ingest/transcode/delivery/captions; object storage (S3/R2) for audio.
 - **AI:** ASR provider (§9) + **Claude** (§9).

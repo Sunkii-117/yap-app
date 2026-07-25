@@ -25,7 +25,7 @@ dark-only, Fraunces for headings/numbers, Nunito for UI, the candy button, the g
 ### Locked product decisions (from PRD §3 — do not relitigate mid-build)
 1. **Practice is the front door; content is the reward.** Posting is an *unlock*, not a starting mode.
 2. **The feed is a dojo, not a stage.** Default privacy = private. (Feed is V1.5.)
-3. **The first rep is engineered to be un-scary.** First yap: audio-only, ~15s, no score, permanently private.
+3. **Onboarding is a normal first-run flow; the first yap is a real yap.** Auth → capture goal + interests + default format, then into the standard loop (prompt → optional Yapbot → record → coach with score + delta tips). No forced "15s, audio-only, no-score" first rep. *(Reshaped 2026-07-25 by founder; supersedes PRD §3 #3.)*
 4. **The coach tracks deltas, it does not grade.** Feedback compares you to your own recent yaps. No 1–10 verdicts.
 
 ---
@@ -78,8 +78,8 @@ dark-only, Fraunces for headings/numbers, Nunito for UI, the candy button, the g
 | **M8** | V1.5: Dojo + Pro | Friends feed + Yap Pro paywall | ⏸ |
 | **M9** | Beta Hardening | A11y pass, perf, crash-free, TestFlight beta | ⬜ |
 
-**Critical path to a demoable core loop:** M0 → M1 → M3 → M4. **Widget (your priority):** M2, unblocked right after M0/M1.
-**S1 runs in parallel** and gates M3.
+**Build order (reprioritized 2026-07-25):** M0 ✅ → **now: M2 widget + M3 coach engine** (logic/backend, no design) → then the frontend phase: M1 (onboarding + record) → M4 (score UI).
+*Rationale:* founder direction — build the widget and the AI coaching engine first; frontend + visual design come after. **S1 ✅** fed M3.
 
 ---
 
@@ -131,24 +131,30 @@ Spacing/Radius/Shadow/Motion`, `CandyButton`, `YapCard`, a `DesignSystemGallery`
 
 ---
 
-### M1 · First Rep ⬜
-**Goal:** A first-time user goes from cold launch to a completed 15-second, audio-only, permanently-private yap
-with a warm Yapbot reaction — in under 2 minutes, with no score shown.
-**Why now:** This un-scary first rep is the product's wedge (PRD §3.3, §7.1). It's the smallest slice that
-exercises the real record → store loop and the emotional bet.
-**Scope (in):** Onboarding ("What do you want to get out of Yap?" cards → interest chips), the first-yap screen
-("15 seconds. Audio only. Nobody sees this but you."), `AVAudioRecorder` capture with permission handling, the
-record state machine, local persistence of the yap, Yapbot's "That's it. You just yapped." + reduced confetti.
-**Out:** scoring, transcription, video, deltas, the full studio timer ring (that's M4).
-**Deliverables:** onboarding + first-rep flow, `RecordingEngine`, SwiftData `Yap` model + store, unit tests.
+### M1 · Onboarding + First Rep ⬜ *(frontend — deferred; build after M2 widget + M3 coach engine)*
+**Goal:** A first-time user signs in, tells us a little about themselves, and completes a **real** first yap —
+prompt → (optional Yapbot) → record → coach — with no artificial limits.
+**Why now:** Onboarding + the record→store loop is the spine of the app. **Reprioritized (2026-07-25):** the
+visual build waits behind the widget (M2) and the coach engine (M3) per founder direction — logic/backend now,
+frontend later.
+**Scope (in) — "all the things" for first run:**
+- **Auth:** Sign in with Apple + Google + email.
+- **Profile capture:** primary goal (start posting / get more confident / just curious), 3–5 interest tags
+  (picker or free text), preferred default format (audio/video).
+- **First yap = a normal yap:** land in the core loop — prompt → optional Yapbot scripting → `AVAudioRecorder` /
+  `AVCaptureSession` capture with permission handling → scored by the coach (M3) with delta tips.
+- Record state machine; local SwiftData persistence; **private by default**.
+**Out:** the full studio timer-ring + score-reveal UI (M4); the coach engine itself (M3); video polish.
+**Deliverables:** onboarding flow, `RecordingEngine`, SwiftData `Yap` model + store, unit tests.
 **Definition of Done:**
-- [ ] Fresh install → finish first yap in **< 2 min** (timed walkthrough recorded).
-- [ ] Mic-permission denial path is handled with a calm, directive message (no dead end).
-- [ ] The recording persists and survives an app relaunch; it is flagged private and audio-only.
-- [ ] **No score, number, or grade** appears anywhere in this flow.
-- [ ] Recording state machine unit-tested (idle→recording→stopped→saved; error paths).
-- [ ] VoiceOver can complete the whole flow; Reduce Motion drops the confetti to a fade.
-**Dependencies:** M0. **Plan:** *TBD when we start M1.*
+- [ ] Fresh install → auth → profile capture → first completed yap, with no dead ends.
+- [ ] Auth works for Apple + Google + email; profile (goal, interests, format) persists across relaunch.
+- [ ] Mic/camera-permission denial paths handled with calm, directive copy (no dead end).
+- [ ] The recording persists and survives relaunch; private by default.
+- [ ] Interests captured in onboarding measurably influence the first curated prompt.
+- [ ] Record state machine unit-tested (idle→recording→stopped→saved; error paths).
+- [ ] VoiceOver can complete the flow; Reduce Motion respected.
+**Dependencies:** M0; coach engine (M3) to score the first yap. **Plan:** *TBD when we build M1 (frontend phase).*
 
 ---
 
@@ -178,6 +184,7 @@ tips, highlight}` measured as a **delta against the user's last yap**, behind a 
 **Why now:** Turns the validated spike into the real engine the score/coaching UI (M4) consumes.
 **Scope (in):** on-device transcription, the backend proxy that holds the API key and calls Claude, the request/
 response contract, the delta-vs-last-yap computation, error/timeout/offline handling ("saved on your phone").
+**Decisions (2026-07-25):** transcription = **on-device Apple `Speech`** (behind a `Transcriber` protocol so a cloud ASR can drop in later); proxy = **thin Node/TS service** holding the Anthropic key (runnable locally; deploy when key + host provided); coaching model = **`claude-opus-4-8`** (quality-critical), revisit Haiku/Sonnet for cost. Deterministic metrics live in a **Swift twin** of `coachmetrics` — the LLM never counts.
 **Out:** the score UI (M4), scripting (M5).
 **Deliverables:** `CoachService` (client), proxy service, `CoachResult` model, delta logic, tests, contract doc.
 **Definition of Done:**
@@ -277,6 +284,7 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 ## 6. Progress log (append-only)
 - **2026-07-23** — Direction locked: brand spec sheet + tokens (`yap-spec-sheet.html`, `tokens.css/json`) and the app-icon logo (`yap-logo-mockup.png`, watermark cleaned). Stack decided: **SwiftUI, iOS-first, widget prioritized.** Master roadmap + M0 plan written. Next: S1 spike and/or M0 Task 0 (install Xcode).
 - **2026-07-24** — **M0 shipped ✅ — merged to `main` via PR #1** (squash; CI green, `/review` clean with 0 findings). XcodeGen project (app + widget stub + tests), all Yap tokens in code, `CandyButton`, `YapCard`, and the `DesignSystemGallery` app root. 5 unit tests green (hex, 15-token color guard vs `tokens.json`, 3 font-registration); gallery verified rendering on the iPhone 17 / iOS 26.5 simulator. *Deltas vs plan:* (1) machine has **Xcode 26.6 / iOS 26.5 sim only** — no `iPhone 15`, so the destination is **`iPhone 17`** (Makefile) and CI picks an available device dynamically; (2) the plan's minimal `Info.plist` lacked `CFBundleIdentifier` → simulator install failed with "Missing bundle ID", fixed by adding standard `CFBundle*` keys wired to build settings; (3) google-webfonts-helper statics ship **mangled name tables** (Nunito reported as "Nunito ExtraLight ExtraBold") → normalized to clean family + PostScript names with fontTools; (4) XcodeGen flattens resources, so `UIAppFonts` uses **bundle-root filenames**, not `Fonts/…`. Next: CI green → `/review` → merge → start M1 (or M2 widget, the near-term priority).
+- **2026-07-25** — **Plan reshaped by founder + build reprioritized.** Dropped the "15s, audio-only, no-score un-scary first rep" (was PRD §3 #3 / §7.1 / M1) — it wasn't the founder's intent. **M1 is now "Onboarding + First Rep":** normal auth (Apple/Google/email) + profile capture (goal, interests, format) → a *normal* first yap. **Build order flipped:** do **M2 widget + M3 coach engine** now (logic/backend), frontend + design later. **Decisions locked:** transcription = on-device Apple `Speech` (behind a `Transcriber` protocol); coach proxy = thin **Node/TS** service holding the Anthropic key; coaching model = `claude-opus-4-8`. Also corrected the stale **RN+Expo** stack note in PRD §11 → the native SwiftUI reality we actually shipped in M0. Next: M2 widget plan + build, then coach engine + proxy.
 
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.
