@@ -5,11 +5,10 @@ import WidgetKit
 struct YapApp: App {
     var body: some Scene {
         WindowGroup {
-            TodayView()
+            RootView()
                 .onAppear(perform: publishToday)
                 .onOpenURL { url in
-                    // yap://today — Today is the root, so the deep link just lands here.
-                    guard url.scheme == "yap" else { return }
+                    guard url.scheme == "yap" else { return } // yap://today lands in the app
                 }
         }
     }
