@@ -147,6 +147,7 @@ struct RecordFlow: View {
     let onFinish: () -> Void
 
     @Environment(\.modelContext) private var context
+    @Environment(AuthController.self) private var auth
     @AppStorage("yap.streak") private var streak = 0
     @State private var phase: Phase = .recording
     @State private var pendingURL: URL?
@@ -174,7 +175,8 @@ struct RecordFlow: View {
     }
 
     private func runCoach(url: URL?, duration: Double) async {
-        let result = await CoachRunner.run(audioURL: url, durationSec: duration, previous: lastMetrics())
+        let result = await CoachRunner.run(audioURL: url, durationSec: duration,
+                                           previous: lastMetrics(), accessToken: auth.accessToken)
         withAnimation(.easeOut(duration: 0.25)) { phase = .score(result) }
     }
 
