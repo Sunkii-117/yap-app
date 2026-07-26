@@ -37,6 +37,7 @@ struct RootView: View {
 /// Friends, Profile. Coach/Friends are placeholders (M5 / V1.5). The FAB opens the
 /// Record→Coach→Score→Win flow full-screen.
 struct MainTabView: View {
+    @Environment(AuthController.self) private var auth
     @State private var tab: Tab = .today
     @State private var showRecord = false
 
@@ -50,7 +51,10 @@ struct MainTabView: View {
                 YapTabBar(selection: $tab, onRecord: { showRecord = true })
             }
             .fullScreenCover(isPresented: $showRecord) {
-                RecordFlow(onFinish: { showRecord = false })
+                // Pass the controller explicitly: a fullScreenCover presents in its own
+                // context and does not reliably inherit @Environment, so injecting it here
+                // (MainTabView is a direct child of RootView, which has it) avoids a crash.
+                RecordFlow(auth: auth, onFinish: { showRecord = false })
             }
     }
 
@@ -144,10 +148,10 @@ struct ComingSoon: View {
 /// milestones (first yap, 7-day streak marks). The coach isn't live until the proxy
 /// is deployed; `CoachRunner` handles the fallback so the loop still completes.
 struct RecordFlow: View {
+    let auth: AuthController
     let onFinish: () -> Void
 
     @Environment(\.modelContext) private var context
-    @Environment(AuthController.self) private var auth
     @AppStorage("yap.streak") private var streak = 0
     @State private var phase: Phase = .recording
     @State private var pendingURL: URL?
