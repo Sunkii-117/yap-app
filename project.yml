@@ -10,6 +10,10 @@ settings:
     MARKETING_VERSION: "0.1.0"
     CURRENT_PROJECT_VERSION: "1"
     CODE_SIGN_STYLE: Automatic
+packages:
+  Supabase:
+    url: https://github.com/supabase/supabase-swift
+    from: 2.0.0
 targets:
   Yap:
     type: application
@@ -32,6 +36,8 @@ targets:
         com.apple.developer.applesignin: [Default]
     dependencies:
       - target: YapWidgetExtension
+      - package: Supabase
+        product: Supabase
   YapWidgetExtension:
     type: app-extension
     platform: iOS
