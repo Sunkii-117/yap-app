@@ -4,6 +4,7 @@ import SwiftData
 /// Routes first-run onboarding vs the main app. Dark-only at launch (design doc §12).
 struct RootView: View {
     @AppStorage("yap.onboarded") private var onboarded = false
+    @Environment(AuthController.self) private var auth
 
     var body: some View {
         Group {
@@ -20,8 +21,11 @@ struct RootView: View {
         .preferredColorScheme(.dark)
     }
 
+    /// Auth first, then onboarding, then the app. Unauthenticated users can't reach the loop.
     @ViewBuilder private var main: some View {
-        if onboarded {
+        if !auth.isSignedIn {
+            AuthGate(auth: auth)
+        } else if onboarded {
             MainTabView()
         } else {
             OnboardingView(onDone: { withAnimation { onboarded = true } })
@@ -222,6 +226,7 @@ struct DebugScreen: View {
     let name: String
     var body: some View {
         switch name {
+        case "auth":       AuthGate(auth: AuthController(service: UnconfiguredAuthService()))
         case "onboarding": OnboardingView(onDone: {})
         case "tabs":       MainTabView()
         case "record":     RecordView(onStop: { _, _ in }, onCancel: {})
