@@ -131,7 +131,7 @@ Spacing/Radius/Shadow/Motion`, `CandyButton`, `YapCard`, a `DesignSystemGallery`
 
 ---
 
-### M1 · Onboarding + First Rep ⬜ *(frontend — deferred; build after M2 widget + M3 coach engine)*
+### M1 · Onboarding + First Rep 🟡 *(auth slice built + tested 2026-07-26; record/onboarding visual UI still deferred to the frontend phase)*
 **Goal:** A first-time user signs in, tells us a little about themselves, and completes a **real** first yap —
 prompt → (optional Yapbot) → record → coach — with no artificial limits.
 **Why now:** Onboarding + the record→store loop is the spine of the app. **Reprioritized (2026-07-25):** the
@@ -147,14 +147,14 @@ frontend later.
 **Out:** the full studio timer-ring + score-reveal UI (M4); the coach engine itself (M3); video polish.
 **Deliverables:** onboarding flow, `RecordingEngine`, SwiftData `Yap` model + store, unit tests.
 **Definition of Done:**
-- [ ] Fresh install → auth → profile capture → first completed yap, with no dead ends.
-- [ ] Auth works for Apple + Google + email; profile (goal, interests, format) persists across relaunch.
+- [~] Fresh install → **auth gate** → profile capture → first completed yap, with no dead ends. *(Gate wired: `RootView` shows `AuthGate` until signed in, then onboarding, then the loop. Live sign-in pending founder creds + device test.)*
+- [~] Auth works for Apple + Google + email; profile (goal, interests, format) persists across relaunch. *(All three flows built behind `AuthService` + a Supabase adapter and unit-tested via mock; profile persists locally via `@AppStorage`. Live Apple/Google/magic-link + server-side profile sync pending founder creds + device test — see `docs/AUTH_SETUP.md`.)*
 - [ ] Mic/camera-permission denial paths handled with calm, directive copy (no dead end).
 - [ ] The recording persists and survives relaunch; private by default.
 - [ ] Interests captured in onboarding measurably influence the first curated prompt.
 - [ ] Record state machine unit-tested (idle→recording→stopped→saved; error paths).
 - [ ] VoiceOver can complete the flow; Reduce Motion respected.
-**Dependencies:** M0; coach engine (M3) to score the first yap. **Plan:** *TBD when we build M1 (frontend phase).*
+**Dependencies:** M0; coach engine (M3) to score the first yap. **Plans:** auth slice `docs/plans/2026-07-26-m1-auth.md` ✅; record/onboarding UI TBD (frontend phase).
 
 ---
 
@@ -292,10 +292,12 @@ screen). **Parked until v1 ships.** Kept here so we don't forget the shape, not 
 - **2026-07-25** — **M2 widget logic built (🟡) on `feat/m2-widget`.** Shared core compiled into app + widget: `Prompt`, curated `PromptLibrary` (14 provocation-first prompts), deterministic `PromptProvider` (prompt-of-the-day by local day — stable/advances/wraps, 4 tests), `SharedStore` over the App Group (3 tests). Real `TodayWidget` (small/medium/large, brand purple+gold, midnight-refresh timeline, `yap://today` deep link) + a minimal functional `TodayView` landing screen; the app publishes today's prompt to the App Group + reloads the widget on launch. **12 unit tests green**; Today verified rendering on the sim. *Deferred (founder — frontend/design later):* on-device widget visual snapshot + tap-through (CLI can't place widgets), custom-font-in-widget, full Dynamic Type reflow. Next: coach engine + thin proxy.
 - **2026-07-25** — **M3 coach engine built (🟡) on `feat/m3-coach`.** Productionized S1 into Swift: `CoachMetrics` (twin of `coachmetrics` — reproduces the validated s1=17/s2=6/s3=13 filler baseline exactly), `CoachResult`/`CoachCoaching` contract (snake_case, matches the S1 prompt input), `MetricsDelta` (signed deltas; nil on first yap), `CoachingParser` (strips fences/prose, validates, throws on malformed), `CoachService` (metrics→prompt→backend→parse→assemble), `CoachPrompt` (verbatim S1 template), `Transcriber` protocol + on-device `SpeechTranscriber`, and `HTTPCoachBackend`. Plus a **thin Node/TS proxy** (`proxy/`) holding `ANTHROPIC_API_KEY`, `POST /coach` → `claude-opus-4-8` → text; typechecks, boots, `/health` + validation verified (no key in client — `HTTPCoachBackend` knows only the URL). **12 coach unit tests green** (metrics baseline, delta, parser incl. malformed, end-to-end via mock backend, first-yap no-delta, backend stub). *Pending:* real audio → transcription → **deployed proxy** latency, and the offline/retry UI — both land with the M1 record flow + a deployed Anthropic key. Next: `/review` → merge; then M1 (frontend) or wire the proxy once you provide a key.
 
+- **2026-07-26** — **M1 auth slice built (🟡) on `feat/m1-auth`** *(autonomous session; founder approved Supabase + magic-link, then stepped out).* Gated the app behind a real account. New `Yap/Auth/`: `AuthService` protocol + domain types (`AuthUser/AuthSession/AuthPhase/AuthProvider/AuthError`), an `@Observable @MainActor AuthController` (phase/accessToken/reset), an `UnconfiguredAuthService` fallback + actor `MockAuthService`, a functional `AuthGate` (Apple/Google buttons + email magic-link, "check your inbox"), and the **only** SDK-touching files behind `#if canImport(Supabase)`: `SupabaseAuthService` (Apple = native identity token → `signInWithIdToken`; Google = Supabase OAuth web flow; email = `signInWithOTP`; `session(from:)` for the `yap://auth-callback` redirect) + native `AppleSignInCoordinator` (nonce + `ASAuthorizationController`). `RootView` shows the gate until signed in; `YapApp` owns the controller, restores the session on launch, and routes the callback URL. **Proxy security:** `POST /coach` now verifies the Supabase JWT (`proxy/auth.ts`, `jose` HS256 vs `SUPABASE_JWT_SECRET`) **before** relaying to Claude — fail-closed 503 with no secret, 401 on missing/invalid/expired/malformed/subject-less — closing the M3 `/review` finding. `HTTPCoachBackend` attaches `Authorization: Bearer`; `CoachRunner`/`RecordFlow` thread the signed-in token. New `YapConfig` centralizes proxy/Supabase config (Info.plist + dev override; empty = unconfigured → safe fallback). Added the **Sign in with Apple** entitlement + config placeholders (build signs green on sim). **52 Swift tests + 8 node tests green; app builds clean vs Supabase 2.53 under Swift 6; smoke-verified `/coach` 401 before any model call.** *Needs founder (see `docs/AUTH_SETUP.md`):* create the Supabase project + paste URL/anon key + JWT secret; enable Apple/Google providers + the Apple capability; **rotate the pasted Anthropic key**; then a real-device sign-in pass (Apple/Google sheets + magic-link redirect can't be sim-verified). *Deferred (noted):* server-side profile sync, token-refresh-on-401 retry, native Google account-picker, an onboarding default-format picker (product call). **Hosting decision:** proxy → **Render** (paid Starter; long-running server, Opus latency > serverless timeout). Next: `/review` → PR (do **not** merge — DoD needs founder creds + device test).
+
 ## 7. Parking lot (things we deliberately deferred)
 - Video yaps beyond the toggle; audio-waveform visual spec.
 - Yapbot mascot illustration (commission) + expressions/confetti pose.
 - Public profile toggle; Friends/Dojo feed; Yap Pro paywall (M8).
 - Light mode (design doc recommends dark-only at launch).
 - Motion easing tokens; spotlight headline scrim token (from spec-sheet Gaps).
-- **Coach proxy deploy-hardening** (from M3 `/review`, do before exposing the proxy publicly): add an app-token/auth check + rate limiting to `POST /coach`; explicit refusal/empty-content handling in the proxy; an optional request timeout on `HTTPCoachBackend`.
+- **Coach proxy deploy-hardening** (from M3 `/review`, do before exposing the proxy publicly): ~~auth check on `POST /coach`~~ **done in M1 (Supabase JWT verification)**; still to do — rate limiting on `POST /coach`; explicit refusal/empty-content handling in the proxy; an optional request timeout on `HTTPCoachBackend`.
