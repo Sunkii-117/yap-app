@@ -1,5 +1,6 @@
 import { createServer, type IncomingMessage } from "node:http";
 import Anthropic from "@anthropic-ai/sdk";
+import { verifyBearer } from "./auth";
 
 // Holds the Anthropic key server-side (from ANTHROPIC_API_KEY) so it never ships
 // in the app. The app POSTs the already-filled coaching prompt; we relay it to
@@ -29,6 +30,10 @@ const server = createServer(async (req, res) => {
 
   if (req.method === "POST" && req.url === "/coach") {
     try {
+      // Only serve authenticated users: verify the Supabase session before touching Claude.
+      const auth = await verifyBearer(req.headers.authorization, process.env.SUPABASE_JWT_SECRET);
+      if (!auth.ok) return json(auth.status, { error: auth.error });
+
       const { prompt } = JSON.parse(await readBody(req)) as { prompt?: unknown };
       if (typeof prompt !== "string" || prompt.length === 0) {
         return json(400, { error: "missing 'prompt' string" });

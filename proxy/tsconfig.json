@@ -9,5 +9,5 @@
     "types": ["node"],
     "noEmit": true
   },
-  "include": ["server.ts"]
+  "include": ["server.ts", "auth.ts", "auth.test.ts"]
 }
