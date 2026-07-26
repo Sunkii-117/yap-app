@@ -5,6 +5,9 @@ import Foundation
 struct HTTPCoachBackend: CoachBackend {
     let endpoint: URL
     var session: URLSession = .shared
+    /// Supabase access token for the signed-in user; attached as `Authorization: Bearer …`
+    /// so the proxy can verify the caller before relaying to Claude. `nil` → no header.
+    var accessToken: String? = nil
 
     private struct RequestBody: Encodable { let prompt: String }
     private struct ResponseBody: Decodable { let coaching: String }
@@ -15,6 +18,9 @@ struct HTTPCoachBackend: CoachBackend {
         var request = URLRequest(url: endpoint)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        if let accessToken, !accessToken.isEmpty {
+            request.setValue("Bearer \(accessToken)", forHTTPHeaderField: "Authorization")
+        }
         request.httpBody = try JSONEncoder().encode(RequestBody(prompt: prompt))
 
         let (data, response) = try await session.data(for: request)

@@ -6,10 +6,12 @@
   "description": "Thin proxy holding the Anthropic key; relays the coach prompt to Claude.",
   "scripts": {
     "start": "tsx server.ts",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "node --import tsx --test auth.test.ts"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.70.0"
+    "@anthropic-ai/sdk": "^0.70.0",
+    "jose": "^6.2.4"
   },
   "devDependencies": {
     "@types/node": "^22.0.0",

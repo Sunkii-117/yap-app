@@ -6,7 +6,8 @@ import Foundation
 /// falls back to the demo sample so the Score screen still reads correctly.
 @MainActor
 enum CoachRunner {
-    static func run(audioURL: URL?, durationSec: Double, previous: CoachMetrics?) async -> CoachResult {
+    static func run(audioURL: URL?, durationSec: Double, previous: CoachMetrics?,
+                    accessToken: String? = nil) async -> CoachResult {
         var transcript = ""
         if let audioURL {
             transcript = (try? await SpeechTranscriber().transcribe(audioURL: audioURL))?.text ?? ""
@@ -20,9 +21,11 @@ enum CoachRunner {
         let duration = durationSec > 0 ? durationSec : 60
         let metrics = CoachMetrics.compute(transcript: transcript, durationSec: duration)
 
-        // Live coach, only when a proxy URL is set (after you deploy the proxy).
-        if let endpoint = proxyEndpoint() {
-            let service = CoachService(backend: HTTPCoachBackend(endpoint: endpoint))
+        // Live coach, only when a proxy URL is set (after you deploy the proxy). The signed-in
+        // user's token rides along as a Bearer header so the proxy can authenticate the caller.
+        if let endpoint = YapConfig.proxyURL {
+            let backend = HTTPCoachBackend(endpoint: endpoint, accessToken: accessToken)
+            let service = CoachService(backend: backend)
             if let result = try? await service.coach(transcript: transcript, durationSec: duration, previous: previous) {
                 return result
             }
@@ -34,12 +37,6 @@ enum CoachRunner {
             coaching: placeholderCoaching(metrics),
             delta: MetricsDelta.between(current: metrics, previous: previous)
         )
-    }
-
-    /// Deployed proxy endpoint; empty until you set `yap.proxyURL`. No key in the client.
-    static func proxyEndpoint() -> URL? {
-        let raw = UserDefaults.standard.string(forKey: "yap.proxyURL") ?? ""
-        return raw.isEmpty ? nil : URL(string: raw)
     }
 
     private static func placeholderCoaching(_ m: CoachMetrics) -> CoachCoaching {

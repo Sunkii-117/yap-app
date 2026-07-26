@@ -4,6 +4,7 @@ import SwiftData
 /// Routes first-run onboarding vs the main app. Dark-only at launch (design doc §12).
 struct RootView: View {
     @AppStorage("yap.onboarded") private var onboarded = false
+    @Environment(AuthController.self) private var auth
 
     var body: some View {
         Group {
@@ -20,8 +21,11 @@ struct RootView: View {
         .preferredColorScheme(.dark)
     }
 
+    /// Auth first, then onboarding, then the app. Unauthenticated users can't reach the loop.
     @ViewBuilder private var main: some View {
-        if onboarded {
+        if !auth.isSignedIn {
+            AuthGate(auth: auth)
+        } else if onboarded {
             MainTabView()
         } else {
             OnboardingView(onDone: { withAnimation { onboarded = true } })
@@ -33,6 +37,7 @@ struct RootView: View {
 /// Friends, Profile. Coach/Friends are placeholders (M5 / V1.5). The FAB opens the
 /// Record→Coach→Score→Win flow full-screen.
 struct MainTabView: View {
+    @Environment(AuthController.self) private var auth
     @State private var tab: Tab = .today
     @State private var showRecord = false
 
@@ -46,7 +51,10 @@ struct MainTabView: View {
                 YapTabBar(selection: $tab, onRecord: { showRecord = true })
             }
             .fullScreenCover(isPresented: $showRecord) {
-                RecordFlow(onFinish: { showRecord = false })
+                // Pass the controller explicitly: a fullScreenCover presents in its own
+                // context and does not reliably inherit @Environment, so injecting it here
+                // (MainTabView is a direct child of RootView, which has it) avoids a crash.
+                RecordFlow(auth: auth, onFinish: { showRecord = false })
             }
     }
 
@@ -140,6 +148,7 @@ struct ComingSoon: View {
 /// milestones (first yap, 7-day streak marks). The coach isn't live until the proxy
 /// is deployed; `CoachRunner` handles the fallback so the loop still completes.
 struct RecordFlow: View {
+    let auth: AuthController
     let onFinish: () -> Void
 
     @Environment(\.modelContext) private var context
@@ -170,7 +179,8 @@ struct RecordFlow: View {
     }
 
     private func runCoach(url: URL?, duration: Double) async {
-        let result = await CoachRunner.run(audioURL: url, durationSec: duration, previous: lastMetrics())
+        let result = await CoachRunner.run(audioURL: url, durationSec: duration,
+                                           previous: lastMetrics(), accessToken: auth.accessToken)
         withAnimation(.easeOut(duration: 0.25)) { phase = .score(result) }
     }
 
@@ -222,6 +232,7 @@ struct DebugScreen: View {
     let name: String
     var body: some View {
         switch name {
+        case "auth":       AuthGate(auth: AuthController(service: UnconfiguredAuthService()))
         case "onboarding": OnboardingView(onDone: {})
         case "tabs":       MainTabView()
         case "record":     RecordView(onStop: { _, _ in }, onCancel: {})
