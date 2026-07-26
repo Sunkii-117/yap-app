@@ -20,10 +20,16 @@ targets:
         PRODUCT_BUNDLE_IDENTIFIER: com.yap.app
         GENERATE_INFOPLIST_FILE: NO
         INFOPLIST_FILE: Yap/Info.plist
+        # Client config surfaced to YapConfig via Info.plist. These are NOT secret (the anon
+        # key is public; RLS protects data). Fill in on the founder's return — see docs/AUTH_SETUP.md.
+        SUPABASE_URL: ""
+        SUPABASE_ANON_KEY: ""
+        PROXY_URL: ""
     entitlements:
       path: Yap/Yap.entitlements
       properties:
         com.apple.security.application-groups: [group.com.yap.shared]
+        com.apple.developer.applesignin: [Default]
     dependencies:
       - target: YapWidgetExtension
   YapWidgetExtension:
